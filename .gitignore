@@ -1,0 +1,47 @@
+# Docker volumes
+mysql_data/
+redis_data/
+models_data/
+knowledge_data/
+
+# .env files
+.env
+*/.env
+
+# Laravel specific
+/laravel-backend/vendor/
+/laravel-backend/node_modules/
+/laravel-backend/public/hot
+/laravel-backend/storage/*.key
+/laravel-backend/storage/framework/cache/*
+/laravel-backend/storage/framework/sessions/*
+/laravel-backend/storage/framework/views/*
+/laravel-backend/storage/logs/*.log
+/laravel-backend/.phpunit.result.cache
+/laravel-backend/.vscode/
+/laravel-backend/Homestead.json
+/laravel-backend/Homestead.yaml
+/laravel-backend/npm-debug.log
+/laravel-backend/yarn-error.log
+/laravel-backend/mix-manifest.json
+/laravel-backend/vite.config.js.timestamp-*
+/laravel-backend/.env.backup
+/laravel-backend/.env.prod
+
+# FastAPI specific
+/fastapi-ai-service/__pycache__/
+/fastapi-ai-service/.pytest_cache/
+/fastapi-ai-service/venv/
+/fastapi-ai-service/*.pyc
+/fastapi-ai-service/*.log
+/fastapi-ai-service/.mypy_cache/
+/fastapi-ai-service/.ruff_cache/
+
+# IDE specific
+.idea/
+.vscode/
+
+# Other
+*.log
+*.sqlite
+*.sqlite3
