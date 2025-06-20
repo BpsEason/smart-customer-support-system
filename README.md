@@ -11,7 +11,7 @@
 - **數據持久化**: 使用 Docker Volume 持久化 AI 模型與知識庫數據，確保服務穩定性。
 - **安全與監控**: 整合 API 金鑰驗證與日誌記錄，支援管理員儀表板分析。
 
-## 系統架構
+## 系統架構與詳細說明
 以下架構圖展示系統組件與數據流向，體現模塊化設計與高效交互：
 
 ```mermaid
@@ -62,6 +62,17 @@ graph TD
     style Dashboard fill:#cfe,stroke:#333,stroke-width:2px
 ```
 
+### 架構詳細說明
+- **客戶介面**: 前端應用（Web/APP）負責用戶交互，通過 Webhook 將訊息傳至 Laravel 後端，支援多渠道輸入。
+- **Laravel 後端服務**: 
+  - `WebhookReceiver` 接收並驗證客戶訊息，推送至 `RedisQueue` 進行非同步處理。
+  - `TicketSystem` 管理工單生命週期，與 MySQL 存儲數據，通過 WebSocket 與前端實時同步。
+  - `AdminAgentInterface` 提供管理員與客服的操作介面，整合 `Dashboard` 進行數據分析。
+- **FastAPI AI 服務**: 
+  - `FastAPIAPI` 作為 AI 核心，提供聊天回覆、情感分析、工單分配與知識庫推薦。
+  - 依賴持久化 Volume 存儲 `NLPModel`、`AIModelFiles` 和 `KBData`，確保模型與數據可復用。
+- **數據流**: 訊息經 Redis 佇列分發至 AI 服務，處理結果反饋至工單系統，最終通過適當渠道（如 WebSocket）回傳用戶。
+
 ## 技術挑戰與解決方案
 1. **高併發處理**: 通過 Redis 佇列實現任務非同步化，結合 Docker 容器化提升擴展性。
 2. **AI 模型整合**: 設計了持久化 Volume 儲存模型文件，並通過 FastAPI 提供高效 API 接口，確保低延遲回應。
@@ -73,6 +84,45 @@ graph TD
 - **AI 實現**: 開發了基於 Scikit-learn 的 NLP 模型訓練與部署流程，結合 FastAPI 優化 API 性能。
 - **可擴展性**: 設計了模塊化代碼與 Docker Compose 配置，支持多環境部署。
 - **監控與優化**: 整合日誌系統與儀表板，支援實時性能分析與問題排查。
+
+## 程式碼示例
+### Laravel Webhook 處理 (簡化版)
+展示如何接收並排隊處理客戶訊息：
+```php
+<?php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Jobs\ProcessIncomingWebhook;
+
+class WebhookController extends Controller
+{
+    public function handleIncoming(Request $request)
+    {
+        $request->validate(['message' => 'required|string']);
+        ProcessIncomingWebhook::dispatch($request->message, $request->customer_id, $request->source);
+        return response()->json(['status' => 'Message queued'], 202);
+    }
+}
+```
+- **設計亮點**: 使用 Laravel 的 Job 系統與 Redis 佇列實現非同步處理，減少前端等待時間。
+
+### FastAPI AI 回覆邏輯 (簡化版)
+展示 AI 服務如何生成回覆：
+```python
+from fastapi import FastAPI
+from app.services.chatbot_service import ChatbotService
+
+app = FastAPI()
+chatbot = ChatbotService()
+
+@app.post("/ai/process_message")
+async def process_message(message: str):
+    intent, confidence = chatbot.predict_intent(message)
+    reply = chatbot.get_reply(intent, message)
+    return {"intent": intent, "reply": reply, "confidence": confidence}
+```
+- **設計亮點**: 模塊化服務設計（`ChatbotService`），支持動態模型加載與回覆個性化。
 
 ## 快速入門
 1. **環境要求**: Docker、Docker Compose、PHP 8.3+、Python 3.10+、MySQL 8.0+、Redis。
@@ -86,3 +136,11 @@ graph TD
 - 支援多語言情感分析。
 - 整合更多 AI 模型（如 BERT）提升意圖識別準確性。
 - 添加故障轉移機制以提升高可用性。
+
+## 許可證
+採用 [MIT 許可證](LICENSE).
+
+## 聯繫
+如有問題，歡迎通過 support@example.com 聯繫。
+
+*最後更新: 2025年6月20日 晚上07:45 CST*
