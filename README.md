@@ -134,7 +134,6 @@ async def process_message(message: str):
 - Redis
 
 ### 啟動專案
-假設你已通過 `git clone https://github.com/BpsEason/smart-customer-support-system.git` 下載專案：
 1. 進入專案目錄：`cd smart-customer-support-system`
 2. **重要**: 將 `laravel-backend/.env.example` 複製為 `laravel-backend/.env`，並修改其中的資料庫密碼 (`DB_PASSWORD`) 和 `APP_KEY`（執行 `docker-compose exec php-fpm php artisan key:generate` 生成 `APP_KEY`）。
 3. **重要**: 將 `fastapi-ai-service/.env.example` 複製為 `fastapi-ai-service/.env`，如果需要，配置 AI 相關環境變數 (例如 `OPENAI_API_KEY`)。
@@ -143,7 +142,7 @@ async def process_message(message: str):
    docker-compose run --rm fastapi-ai python -c "from chatbot_service import ChatbotService; ChatbotService()._train_and_save_model(['hello'], ['greeting'], '/app/models_data/trained_chatbot_model.joblib')"
    docker-compose run --rm fastapi-ai python -c "from sentiment_service import SentimentService; SentimentService()._train_and_save_model(['good'], ['positive'], '/app/models_data/trained_sentiment_model.joblib')"
    ```
-   這僅為占位符，您需提供真實訓練數據來生成有用的模型。
+   這僅為占位符，建議提供真實訓練數據以生成有用的模型。
 5. 啟動所有服務：`docker-compose up --build -d`
 6. 等待服務啟動 (首次啟動可能需要一些時間)
 7. 運行 Laravel 遷移：`docker-compose exec php-fpm php artisan migrate`
