@@ -67,7 +67,7 @@ graph TD
 - **Laravel 後端服務**: 
   - `WebhookReceiver` 接收並驗證客戶訊息，推送至 `RedisQueue` 進行非同步處理。
   - `TicketSystem` 管理工單生命週期，與 MySQL 存儲數據，通過 WebSocket 與前端實時同步。
-  - `AdminAgentInterface` 提供管理員與客服的操作介面，整合 `Dashboard` 進行數據分析。
+  - `AdminAgentInterface` 提供管理員與客服的操作介面，整合 `Dashboard` 進行數據分析（目前僅支援 API 訪問，無預設圖形化介面）。
 - **FastAPI AI 服務**: 
   - `FastAPIAPI` 作為 AI 核心，提供聊天回覆、情感分析、工單分配與知識庫推薦。
   - 依賴持久化 Volume 存儲 `NLPModel`、`AIModelFiles` 和 `KBData`，確保模型與數據可復用。
@@ -149,12 +149,58 @@ async def process_message(message: str):
 8. 訪問應用程式：
    - Laravel 前端：`http://localhost`
    - FastAPI 文件：`http://localhost:8001/docs`
-   - 管理介面：`http://localhost/admin` (需登入)
+
+### 注意事項
+- **管理介面**: 本專案目前未提供預設的圖形化管理後台介面 (`http://localhost/admin`)。訪問此路徑將返回 404 錯誤，因為系統專注於後端 API 和 AI 服務。若需管理員操作，請參考下方「管理員操作指引」使用 API。
+- **前端開發**: 預設前端僅提供基本交互，需自行開發管理員介面（建議使用 Vue.js 或 React.js）以實現圖形化管理。
+
+## 管理員操作指引
+本系統無預設圖形化管理後台，管理員操作需透過 API 進行。以下是基本步驟：
+
+1. **註冊一個管理員用戶**  
+   使用 `/api/register` 端點創建管理員帳號：
+   - **URL**: `http://localhost/api/register`
+   - **方法**: `POST`
+   - **Body (JSON)**:
+     ```json
+     {
+         "name": "Admin User",
+         "email": "admin@example.com",
+         "password": "your_admin_password",
+         "password_confirmation": "your_admin_password",
+         "role": "admin"
+     }
+     ```
+   - 替換 `your_admin_password` 為自訂密碼。
+
+2. **登入管理員用戶，獲取存取令牌**  
+   使用 `/api/login` 端點獲取授權令牌：
+   - **URL**: `http://localhost/api/login`
+   - **方法**: `POST`
+   - **Body (JSON)**:
+     ```json
+     {
+         "email": "admin@example.com",
+         "password": "your_admin_password"
+     }
+     ```
+   - 響應中包含 `access_token` (如 `Bearer ey...`)，請保存此令牌。
+
+3. **使用存取令牌訪問管理員專屬 API**  
+   將 `access_token` 添加至 `Authorization` 頭部進行管理操作。例如，獲取所有工單：
+   - **URL**: `http://localhost/api/tickets`
+   - **方法**: `GET`
+   - **Header**:
+     ```
+     Authorization: Bearer YOUR_ADMIN_ACCESS_TOKEN
+     ```
+   - 將 `YOUR_ADMIN_ACCESS_TOKEN` 替換為步驟 2 獲取的令牌。
 
 ## 未來改進
 - 支援多語言情感分析。
 - 整合更多 AI 模型（如 BERT）提升意圖識別準確性。
 - 添加故障轉移機制以提升高可用性。
+- 開發圖形化管理後台（建議使用 Vue.js 或 React.js）。
 
 ## 許可證
 採用 [MIT 許可證](LICENSE).
