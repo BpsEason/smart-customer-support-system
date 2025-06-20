@@ -125,12 +125,32 @@ async def process_message(message: str):
 - **設計亮點**: 模塊化服務設計（`ChatbotService`），支持動態模型加載與回覆個性化。
 
 ## 快速入門
-1. **環境要求**: Docker、Docker Compose、PHP 8.3+、Python 3.10+、MySQL 8.0+、Redis。
-2. **啟動專案**:
-   - 克隆倉庫：`git clone https://github.com/BpsEason/smart-customer-support-system.git`
-   - 運行腳本：`./create_project.sh`
-   - 啟動服務：`docker-compose up --build`
-3. **訪問**: 開啟 `http://localhost` 查看前端，`http://localhost/admin` 進入管理介面。
+### 環境要求
+- Docker
+- Docker Compose
+- PHP 8.3+
+- Python 3.10+
+- MySQL 8.0+
+- Redis
+
+### 啟動專案
+假設你已通過 `git clone https://github.com/BpsEason/smart-customer-support-system.git` 下載專案：
+1. 進入專案目錄：`cd smart-customer-support-system`
+2. **重要**: 將 `laravel-backend/.env.example` 複製為 `laravel-backend/.env`，並修改其中的資料庫密碼 (`DB_PASSWORD`) 和 `APP_KEY`（執行 `docker-compose exec php-fpm php artisan key:generate` 生成 `APP_KEY`）。
+3. **重要**: 將 `fastapi-ai-service/.env.example` 複製為 `fastapi-ai-service/.env`，如果需要，配置 AI 相關環境變數 (例如 `OPENAI_API_KEY`)。
+4. **AI 模型訓練 (首次運行或模型更新)**: 由於 `.joblib` 模型文件通常較大未包含在 Git 中，進入 `fastapi-ai-service/app/services/` 目錄，執行：
+   ```bash
+   docker-compose run --rm fastapi-ai python -c "from chatbot_service import ChatbotService; ChatbotService()._train_and_save_model(['hello'], ['greeting'], '/app/models_data/trained_chatbot_model.joblib')"
+   docker-compose run --rm fastapi-ai python -c "from sentiment_service import SentimentService; SentimentService()._train_and_save_model(['good'], ['positive'], '/app/models_data/trained_sentiment_model.joblib')"
+   ```
+   這僅為占位符，您需提供真實訓練數據來生成有用的模型。
+5. 啟動所有服務：`docker-compose up --build -d`
+6. 等待服務啟動 (首次啟動可能需要一些時間)
+7. 運行 Laravel 遷移：`docker-compose exec php-fpm php artisan migrate`
+8. 訪問應用程式：
+   - Laravel 前端：`http://localhost`
+   - FastAPI 文件：`http://localhost:8001/docs`
+   - 管理介面：`http://localhost/admin` (需登入)
 
 ## 未來改進
 - 支援多語言情感分析。
