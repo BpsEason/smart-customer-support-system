@@ -85,45 +85,6 @@ graph TD
 - **可擴展性**: 設計了模塊化代碼與 Docker Compose 配置，支持多環境部署。
 - **監控與優化**: 整合日誌系統與儀表板，支援實時性能分析與問題排查。
 
-## 程式碼示例
-### Laravel Webhook 處理 (簡化版)
-展示如何接收並排隊處理客戶訊息：
-```php
-<?php
-namespace App\Http\Controllers;
-
-use Illuminate\Http\Request;
-use App\Jobs\ProcessIncomingWebhook;
-
-class WebhookController extends Controller
-{
-    public function handleIncoming(Request $request)
-    {
-        $request->validate(['message' => 'required|string']);
-        ProcessIncomingWebhook::dispatch($request->message, $request->customer_id, $request->source);
-        return response()->json(['status' => 'Message queued'], 202);
-    }
-}
-```
-- **設計亮點**: 使用 Laravel 的 Job 系統與 Redis 佇列實現非同步處理，減少前端等待時間。
-
-### FastAPI AI 回覆邏輯 (簡化版)
-展示 AI 服務如何生成回覆：
-```python
-from fastapi import FastAPI
-from app.services.chatbot_service import ChatbotService
-
-app = FastAPI()
-chatbot = ChatbotService()
-
-@app.post("/ai/process_message")
-async def process_message(message: str):
-    intent, confidence = chatbot.predict_intent(message)
-    reply = chatbot.get_reply(intent, message)
-    return {"intent": intent, "reply": reply, "confidence": confidence}
-```
-- **設計亮點**: 模塊化服務設計（`ChatbotService`），支持動態模型加載與回覆個性化。
-
 ## 快速入門
 ### 環境要求
 - Docker
@@ -135,24 +96,98 @@ async def process_message(message: str):
 
 ### 啟動專案
 1. 進入專案目錄：`cd smart-customer-support-system`
-2. **重要**: 將 `laravel-backend/.env.example` 複製為 `laravel-backend/.env`，並修改其中的資料庫密碼 (`DB_PASSWORD`) 和 `APP_KEY`（執行 `docker-compose exec php-fpm php artisan key:generate` 生成 `APP_KEY`）。
-3. **重要**: 將 `fastapi-ai-service/.env.example` 複製為 `fastapi-ai-service/.env`，如果需要，配置 AI 相關環境變數 (例如 `OPENAI_API_KEY`)。
-4. **AI 模型訓練 (首次運行或模型更新)**: 由於 `.joblib` 模型文件通常較大未包含在 Git 中，進入 `fastapi-ai-service/app/services/` 目錄，執行：
-   ```bash
-   docker-compose run --rm fastapi-ai python -c "from chatbot_service import ChatbotService; ChatbotService()._train_and_save_model(['hello'], ['greeting'], '/app/models_data/trained_chatbot_model.joblib')"
-   docker-compose run --rm fastapi-ai python -c "from sentiment_service import SentimentService; SentimentService()._train_and_save_model(['good'], ['positive'], '/app/models_data/trained_sentiment_model.joblib')"
-   ```
-   這僅為占位符，建議提供真實訓練數據以生成有用的模型。
+2. **重要**: 編輯環境變數文件。
+   - 將 `laravel-backend/.env.example` 複製為 `laravel-backend/.env`（`cp laravel-backend/.env.example laravel-backend/.env`），並修改敏感資訊（如 `DB_PASSWORD` 和 `APP_KEY`）。
+   - 將 `fastapi-ai-service/.env.example` 複製為 `fastapi-ai-service/.env`（`cp fastapi-ai-service/.env.example fastapi-ai-service/.env`），配置 AI 相關變數（如 `OPENAI_API_KEY`，若適用）。
+   - 腳本會自動生成隨機密碼和 Reverb 配置，請保存輸出中的值並填入 `.env` 文件。
+3. **AI 模型訓練 (首次運行或模型更新)**:
+   - 準備訓練數據：AI 模型需要結構化的文本數據集（推薦格式為 CSV 或 JSON）。例如：
+     - **Chatbot 模型**: 包含 `text`（用戶訊息）和 `intent`（意圖標籤）列，例如：
+       ```csv
+       text,intent
+       "Hello",greeting
+       "Forgot my password",password_reset
+       "Order status",order_status
+       ```
+     - **Sentiment 模型**: 包含 `text`（文本）和 `sentiment`（情感標籤，如 `positive`、`negative`、`neutral`）列，例如：
+       ```csv
+       text,sentiment
+       "I love this product",positive
+       "This is terrible",negative
+       "It's okay",neutral
+       ```
+   - 將數據文件保存到 `fastapi-ai-service/app/data/` 目錄（例如 `training_chatbot.csv` 和 `training_sentiment.csv`）。
+   - 運行訓練命令：
+     - 訓練 Chatbot 模型：
+       ```bash
+       docker compose run --rm fastapi-ai python -c "from app.services.chatbot_service import ChatbotService; ChatbotService()._train_and_save_model(open('/app/data/training_chatbot.csv').read().splitlines(), open('/app/data/training_intent.csv').read().splitlines(), '/app/models_data/trained_chatbot_model.joblib')"
+       ```
+     - 訓練 Sentiment 模型：
+       ```bash
+       docker compose run --rm fastapi-ai python -c "from app.services.sentiment_service import SentimentService; SentimentService()._train_and_save_model(open('/app/data/training_sentiment.csv').read().splitlines(), open('/app/data/training_sentiment.csv').read().splitlines(), '/app/models_data/trained_sentiment_model.joblib')"
+       ```
+   - **最佳實踐**: 確保數據集至少包含 100-1000 條記錄，涵蓋多樣化情境。驗證數據後，檢查模型文件是否生成於 `models_data/` 目錄。
+4. **複製知識庫數據 (首次運行)**:
+   - 範例知識庫文件已生成在 `fastapi-ai-service/app/data/knowledge_base.json`。
+   - 複製指令：`cp fastapi-ai-service/app/data/knowledge_base.json smart-customer-support-system/knowledge_data/knowledge_base.json`
+   - 可根據需求編輯 `knowledge_base.json`，添加更多問答對和關鍵詞。
 5. 啟動所有服務：`docker-compose up --build -d`
-6. 等待服務啟動 (首次啟動可能需要一些時間)
+6. 等待服務啟動 (首次啟動可能需要時間)
 7. 運行 Laravel 遷移：`docker-compose exec php-fpm php artisan migrate`
-8. 訪問應用程式：
+8. (可選) 運行數據填充：`docker-compose exec php-fpm php artisan db:seed`
+9. 訪問應用程式：
    - Laravel 前端：`http://localhost`
    - FastAPI 文件：`http://localhost:8001/docs`
 
 ### 注意事項
-- **管理介面**: 本專案目前未提供預設的圖形化管理後台介面 (`http://localhost/admin`)。訪問此路徑將返回 404 錯誤，因為系統專注於後端 API 和 AI 服務。若需管理員操作，請參考下方「管理員操作指引」使用 API。
-- **前端開發**: 預設前端僅提供基本交互，需自行開發管理員介面（建議使用 Vue.js 或 React.js）以實現圖形化管理。
+- **管理介面**: 本專案目前未提供預設圖形化管理後台介面 (`http://localhost/admin`)。訪問此路徑將返回 404 錯誤，因為系統專注於後端 API 和 AI 服務。若需管理員操作，請參考「管理員操作指引」使用 API，或開發自訂管理後台。
+- **前端開發**: 預設前端僅提供基本交互，需自行開發管理員介面。
+
+## 開發管理後台
+為提升管理員與客服的操作體驗，可開發圖形化管理後台。以下是建議步驟：
+- **技術選擇**: 推薦使用 Vue.js 作為前端框架，結合 Vue Router 和 Vuex/Pinia 管理狀態。
+- **基本結構**:
+  - 創建 `admin` 目錄作為管理後台根目錄。
+  - 設置路由，例如 `/admin/tickets`（工單列表）、`/admin/users`（用戶管理）。
+  - 示例文件結構：
+    ```
+    admin/
+    ├── src/
+    │   ├── views/
+    │   │   ├── TicketList.vue
+    │   │   └── UserList.vue
+    │   ├── router/
+    │   │   └── index.js
+    │   ├── store/
+    │   │   └── index.js
+    │   └── main.js
+    ├── public/
+    │   └── index.html
+    └── package.json
+    ```
+- **API 集成**:
+  - 使用 Axios 或 Fetch 調用 Laravel API（如 `/api/tickets`），並在請求頭中添加 `Authorization: Bearer <token>`。
+  - 示例代碼（`TicketList.vue`）：
+    ```javascript
+    import axios from 'axios';
+
+    export default {
+      data() {
+        return { tickets: [] };
+      },
+      async created() {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('http://localhost/api/tickets', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.tickets = response.data;
+      },
+    };
+    ```
+- **部署**:
+  - 將管理後台靜態文件複製到 `laravel-backend/public/admin/`。
+  - 更新 Nginx 配置文件，添加 `location /admin/` 代理至 `public/admin/index.html`。
+  - 啟動後訪問 `http://localhost/admin`。
 
 ## 管理員操作指引
 本系統無預設圖形化管理後台，管理員操作需透過 API 進行。以下是基本步驟：
@@ -195,6 +230,21 @@ async def process_message(message: str):
      Authorization: Bearer YOUR_ADMIN_ACCESS_TOKEN
      ```
    - 將 `YOUR_ADMIN_ACCESS_TOKEN` 替換為步驟 2 獲取的令牌。
+
+## 測試覆蓋
+### 運行測試
+1. **Laravel 測試**:
+   - 進入 Laravel 容器：`docker-compose exec php-fpm bash`
+   - 運行 PHPUnit 測試：`vendor/bin/phpunit`
+   - 測試覆蓋 `AuthController` 和 `TicketController` 的核心功能。
+2. **FastAPI 測試**:
+   - 進入 FastAPI 容器：`docker-compose exec fastapi-ai bash`
+   - 運行 Pytest 測試：`pytest tests/`
+
+### 測試文件
+- Laravel 測試文件位於 `laravel-backend/tests/`，例如：
+  - `Feature/AuthTest.php` 測試用戶註冊和登入。
+  - `Feature/TicketTest.php` 測試工單創建和更新。
 
 ## 未來改進
 - 支援多語言情感分析。
