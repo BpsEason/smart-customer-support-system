@@ -31,7 +31,8 @@
 graph TD
     subgraph Laravel 後端
         B["網頁應用"] --> C["Webhook 接收器 Laravel"]
-        C --> D["Laravel 佇列 Redis"]
+        C --> R["Redis 訊息隊列"]
+        R --> D["AI 處理 Job"]
         D --> I["工單系統 Laravel"]
         I --> J["客服代理"]
         J --> K["儀表板 Laravel"]
@@ -50,15 +51,15 @@ graph TD
         F --> G["知識庫 JSON 資料庫 卷 (持久化 Volume)"]
         F --> H["AI 模型 卷 (持久化 Volume)"]
         D --> E
+        E --> I
     end
 
     subgraph 外部互動
         A["用戶"] --> B
-        L["監控系統 Prometheus Grafana"]
+        L["監控系統 Prometheus Grafana (未來計劃)"]
     end
 
-    E <--> L
-    E --> I
+    E --> L
 ```
 
 - **流程解釋**：用戶透過 Web/App 提交問題 → Laravel 接收 Webhook 並推送到 Redis 佇列 → FastAPI 處理 AI 邏輯 → 回傳工單或建議 → 顯示於儀表板。
