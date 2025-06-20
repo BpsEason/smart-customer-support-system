@@ -1,7 +1,11 @@
 # 從安裝到代碼解析：打造智能客服系統（Laravel + FastAPI）
 
+**發布日期：2025 年 6 月 20 日 下午 5:41 CST**  
+**作者：BpsEason**  
+**GitHub 倉庫：https://github.com/BpsEason/smart-customer-support-system.git**
+
 ## 引言
-智能客服系統結合了 Web 開發與 AI 技術，是提升客戶服務效率的理想解決方案。在我的開源專案 `smart-customer-support-system` 中，我使用 **Laravel** 處理後端邏輯，搭配 **FastAPI** 實現 AI 功能，並透過 Docker 容器化部署。本文將帶您從環境安裝開始，逐步深入專案代碼，幫助您理解並實作一個完整的智能客服平台。無論您是初學者還是資深開發者，這篇教程都將提供實用的指導。
+智能客服系統結合 Web 開發與 AI 技術，是提升客戶服務效率的理想解決方案。在我的開源專案 `smart-customer-support-system` 中，我使用 **Laravel** 處理後端邏輯，搭配 **FastAPI** 實現 AI 功能，並透過 Docker 容器化部署。本文將帶您從環境安裝開始，逐步深入專案代碼，並提供架構圖以幫助理解系統設計。無論您是初學者還是資深開發者，這篇教程都將提供實用的指導。
 
 ## 專案概述
 `smart-customer-support-system` 是一個開源智能客服平台，支援以下功能：
@@ -12,41 +16,6 @@
 
 專案托管於：[https://github.com/BpsEason/smart-customer-support-system.git](https://github.com/BpsEason/smart-customer-support-system.git)，歡迎 fork 和貢獻！
 
-## 架構圖
-```mermaid
-graph TD
-    subgraph Laravel 後端
-        B["網頁應用"] --> C["Webhook 接收器 Laravel"]
-        C --> D["Laravel 佇列 Redis"]
-        D --> I["工單系統 Laravel"]
-        I --> J["客服代理"]
-        J --> K["儀表板 Laravel"]
-        subgraph MySQL 資料庫
-            M1["工單"]
-            M2["用戶資料"]
-            M3["系統日誌"]
-        end
-        I --> M1
-        I --> M2
-        I --> M3
-    end
-
-    subgraph FastAPI AI 服務
-        E["聊天機器人 API FastAPI"] --> F["AI 服務層 NLP 情緒分析"]
-        F --> G["知識庫 JSON 資料庫 卷 (持久化 Volume)"]
-        F --> H["AI 模型 卷 (持久化 Volume)"]
-        D --> E
-    end
-
-    subgraph 外部互動
-        A["用戶"] --> B
-        L["監控系統 Prometheus Grafana"]
-    end
-
-    E <--> L
-    E --> I
-```
-
 ## 技術棧
 - **Laravel (PHP)**：後端框架，負責 Webhook 和工單管理。
 - **FastAPI (Python)**：AI 服務，實現聊天機器人與情感分析。
@@ -54,6 +23,24 @@ graph TD
 - **Redis**：訊息隊列，支援非同步處理。
 - **Docker & Docker Compose**：容器化部署。
 - **scikit-learn & NLTK**：AI 模型訓練。
+
+## 系統架構
+系統分為三個主要模組：Laravel 後端、FastAPI AI 服務及基礎設施。以下是架構圖（使用 Mermaid 語法）：
+
+```mermaid
+graph TD
+    User --> Web/App
+    Web/App --> Webhook Receiver (Laravel)
+    Webhook Receiver (Laravel) --> AI Processing Job (Laravel Queue/Redis)
+    AI Processing Job --> Chatbot API (FastAPI)
+    Chatbot API (FastAPI) --> AI Service Layer (NLP, Sentiment, etc.)
+    AI Service Layer --> Knowledge Base (JSON)
+    Chatbot API (FastAPI) --> Ticket System (Laravel)
+    Ticket System (Laravel) --> Customer Service Agent
+    Customer Service Agent --> Dashboard (Laravel)
+```
+
+- **流程解釋**：用戶透過 Web/App 提交問題 → Laravel 接收 Webhook 並推送到 Redis 佇列 → FastAPI 處理 AI 邏輯 → 回傳工單或建議 → 顯示於儀表板。
 
 ## 實作步驟
 
