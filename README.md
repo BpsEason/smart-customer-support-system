@@ -130,6 +130,3 @@ docker compose exec fastapi-ai pytest tests/test_chatbot_api.py
 
 ## 許可證
 MIT 許可證
-
-## 聯繫方式
-BpsEason - [bps.eason@example.com](mailto:bps.eason@example.com) - [GitHub](https://github.com/BpsEason)
