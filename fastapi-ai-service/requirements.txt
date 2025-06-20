@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart # 如果你需要接收文件
+scikit-learn # 基礎機器學習
+nltk # 自然語言處理工具
+pandas # 數據處理
+numpy # 數值計算
+python-dotenv # 用於載入 .env 檔案
+joblib # 用於保存/載入 scikit-learn 模型
+# prometheus_client # 用於 Prometheus 監控
+# opentelemetry-api
+# opentelemetry-sdk
+# opentelemetry-instrumentation-fastapi # 如果要加 OpenTelemetry

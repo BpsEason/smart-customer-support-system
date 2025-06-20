@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php-fpm
+      - fastapi-ai
+
+  php-fpm:
+    build:
+      context: ./laravel-backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./laravel-backend:/var/www/html
+    environment:
+      # Laravel .env 設定 (這些會覆蓋 .env 檔案中的同名變數)
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: your_database_name # <<< 請修改
+      DB_USERNAME: your_db_user      # <<< 請修改
+      DB_PASSWORD: your_db_password  # <<< 請修改
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis # 確保 Laravel 使用 Redis 隊列
+      FASTAPI_AI_SERVICE_URL: http://fastapi-ai:8001 # 容器內部通訊
+      # WEBHOOK_SECRET_KEY: your_webhook_secret_key # 如果實現 Webhook 簽名驗證，請配置
+    depends_on:
+      - mysql
+      - redis
+    # network_mode: host # 如果在某些情況下需要 host 網路
+
+  fastapi-ai:
+    build:
+      context: ./fastapi-ai-service
+      dockerfile: Dockerfile
+    volumes:
+      - ./fastapi-ai-service:/app
+      # 持久化 AI 模型和知識庫數據，確保容器重建時不會丟失訓練結果
+      - models_data:/app/models # 持久化 AI 模型
+      - knowledge_data:/app/data # 持久化知識庫數據
+    ports:
+      - "8001:8001" # 外部訪問 AI 服務的端口
+    environment:
+      PYTHONUNBUFFERED: 1 # 確保日誌輸出
+      MODEL_DIR: /app/models # AI 模型文件夾路徑 (對應到 volume)
+      KNOWLEDGE_BASE_PATH: /app/data/knowledge_base.json # 知識庫文件路徑 (對應到 volume)
+    # network_mode: host # 如果在某些情況下需要 host 網路
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: your_root_password # <<< 請修改
+      MYSQL_DATABASE: your_database_name    # <<< 請修改
+      MYSQL_USER: your_db_user              # <<< 請修改
+      MYSQL_PASSWORD: your_db_password      # <<< 請修改
+    volumes:
+      - db_data:/var/lib/mysql # 持久化數據
+    command: --default-authentication-plugin=mysql_native_password # MySQL 8 兼容性
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+volumes:
+  db_data: # 定義一個數據卷用於持久化 MySQL 數據
+  models_data: # 定義一個數據卷用於持久化 AI 模型
+  knowledge_data: # 定義一個數據卷用於持久化知識庫
