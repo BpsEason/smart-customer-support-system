@@ -1,9 +1,5 @@
 # 從安裝到代碼解析：打造智能客服系統（Laravel + FastAPI）
 
-**發布日期：2025 年 6 月 20 日 下午 5:37 CST**  
-**作者：BpsEason**  
-**GitHub 倉庫：https://github.com/BpsEason/smart-customer-support-system.git**
-
 ## 引言
 智能客服系統結合了 Web 開發與 AI 技術，是提升客戶服務效率的理想解決方案。在我的開源專案 `smart-customer-support-system` 中，我使用 **Laravel** 處理後端邏輯，搭配 **FastAPI** 實現 AI 功能，並透過 Docker 容器化部署。本文將帶您從環境安裝開始，逐步深入專案代碼，幫助您理解並實作一個完整的智能客服平台。無論您是初學者還是資深開發者，這篇教程都將提供實用的指導。
 
