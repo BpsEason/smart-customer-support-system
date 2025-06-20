@@ -14,7 +14,7 @@
 ## 系統架構
 以下架構圖展示系統組件與數據流向，體現模塊化設計與高效交互：
 
-```
+```mermaid
 graph TD
     subgraph 客戶介面 - Web / App / Email
         User[用戶 / 客戶] --> WebApp["前端應用 (Web/APP)"]
