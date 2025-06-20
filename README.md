@@ -32,17 +32,36 @@
 ## 架構圖
 ```mermaid
 graph TD
-    A["用戶"] --> B["網頁應用"]
-    B --> C["Webhook 接收器 Laravel"]
-    C --> D["AI 處理任務 Laravel 佇列 Redis"]
-    D --> E["聊天機器人 API FastAPI"]
-    E --> F["AI 服務層 NLP 情緒分析"]
-    F --> G["知識庫 JSON 資料庫 卷"]
-    F --> H["持久化模型 卷"]
-    E --> I["工單系統 Laravel"]
-    I --> J["客服代理"]
-    J --> K["儀表板 Laravel"]
-    E <--> L["監控系統 Prometheus Grafana"]
+    subgraph Laravel 後端
+        B["網頁應用"] --> C["Webhook 接收器 Laravel"]
+        C --> D["Laravel 佇列 Redis"]
+        D --> I["工單系統 Laravel"]
+        I --> J["客服代理"]
+        J --> K["儀表板 Laravel"]
+        subgraph MySQL 資料庫
+            M1["工單"]
+            M2["用戶資料"]
+            M3["系統日誌"]
+        end
+        I --> M1
+        I --> M2
+        I --> M3
+    end
+
+    subgraph FastAPI AI 服務
+        E["聊天機器人 API FastAPI"] --> F["AI 服務層 NLP 情緒分析"]
+        F --> G["知識庫 JSON 資料庫 卷 (持久化 Volume)"]
+        F --> H["AI 模型 卷 (持久化 Volume)"]
+        D --> E
+    end
+
+    subgraph 外部互動
+        A["用戶"] --> B
+        L["監控系統 Prometheus Grafana"]
+    end
+
+    E <--> L
+    E --> I
 ```
 
 ## 快速開始
