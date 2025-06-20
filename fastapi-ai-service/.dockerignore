@@ -1,0 +1,12 @@
+.env
+.git
+.gitignore
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+*.log
+.mypy_cache/
+.ruff_cache/
+models_data/ # These are handled by volume, no need to copy from source
+knowledge_data/ # These are handled by volume, no need to copy from source
