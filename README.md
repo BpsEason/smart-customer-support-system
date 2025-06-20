@@ -32,17 +32,17 @@ This project delivers an automated, intelligent customer service system to strea
 ## Architecture Diagram
 ```mermaid
 graph TD
-    A["User"] --> B["Web/App"]
-    B --> C["Webhook Receiver (Laravel)"]
-    C --> D["AI Processing Job (Laravel Queue/Redis)"]
-    D --> E["Chatbot API (FastAPI)"]
-    E --> F["AI Service Layer (NLP, Sentiment, etc.)"]
-    F --> G["Knowledge Base (JSON/DB/Volume)"]
-    F --> H["Persistent Models (Volume)"]
-    E --> I["Ticket System (Laravel)"]
+    A["User"] --> B["Web App"]
+    B --> C["Webhook Receiver Laravel"]
+    C --> D["AI Processing Job Laravel Queue Redis"]
+    D --> E["Chatbot API FastAPI"]
+    E --> F["AI Service Layer NLP Sentiment"]
+    F --> G["Knowledge Base JSON DB Volume"]
+    F --> H["Persistent Models Volume"]
+    E --> I["Ticket System Laravel"]
     I --> J["Customer Service Agent"]
-    J --> K["Dashboard (Laravel)"]
-    L["Observability (Monitoring: Prometheus, Grafana)"] <-- E
+    J --> K["Dashboard Laravel"]
+    L["Observability Monitoring Prometheus Grafana"] <-- E
 ```
 
 ## Quick Start
