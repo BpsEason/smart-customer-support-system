@@ -139,8 +139,3 @@ async def process_message(message: str):
 
 ## 許可證
 採用 [MIT 許可證](LICENSE).
-
-## 聯繫
-如有問題，歡迎通過 support@example.com 聯繫。
-
-*最後更新: 2025年6月20日 晚上07:45 CST*
