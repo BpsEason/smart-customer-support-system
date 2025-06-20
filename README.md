@@ -42,7 +42,7 @@ graph TD
     E --> I["Ticket System Laravel"]
     I --> J["Customer Service Agent"]
     J --> K["Dashboard Laravel"]
-    L["Observability Monitoring Prometheus Grafana"] <-- E
+    E <--> L["Observability Monitoring Prometheus Grafana"]
 ```
 
 ## Quick Start
