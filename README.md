@@ -173,6 +173,13 @@ graph TD
 
     subgraph AI 服務
         E
+        E -->|意圖識別| E1[聊天機器人]
+        E -->|情感分析| E2[情感分析]
+        E -->|工單分配| E3[智能分配]
+        E -->|知識查詢| E4[知識庫]
+        E1 -->|NLP 模型| E5[NLP 模型]
+        E2 -->|AI 模型| E6[AI 模型]
+        E4 -->|數據存儲| E7[知識庫數據]
     end
 
     style A fill:#f9f,stroke:#333
@@ -185,6 +192,13 @@ graph TD
     style H fill:#dfd,stroke:#333
     style I fill:#dfd,stroke:#333
     style J fill:#dfd,stroke:#333
+    style E1 fill:#e6e,stroke:#333
+    style E2 fill:#e6e,stroke:#333
+    style E3 fill:#e6e,stroke:#333
+    style E4 fill:#e6e,stroke:#333
+    style E5 fill:#e6e,stroke:#333
+    style E6 fill:#e6e,stroke:#333
+    style E7 fill:#e6e,stroke:#333
 ```
 
 ### 架構說明
@@ -198,11 +212,11 @@ graph TD
   - **管理員介面**：提供 API 驅動的操作介面。
   - **儀表板**：顯示監控數據，支援系統管理。
 - **FastAPI AI 服務**：
-  - 提供意圖識別、情感分析、工單分配和知識庫推薦。
-  - 使用持久化 Volume 存儲模型和數據。
+  - 提供意圖識別（聊天機器人）、情感分析、智能工單分配和知識庫推薦。
+  - 使用 NLP 模型和 AI 模型進行分析，持久化 Volume 存儲知識庫數據。
 - **數據流**：
   - 訊息從 Web 客戶端經 Webhook 接收器進入 Redis 佇列。
-  - Redis 佇列將訊息分發至 FastAPI AI 服務進行處理。
+  - Redis 佇列將訊息分發至 FastAPI AI 服務進行處理（包括意圖識別、情感分析等）。
   - 處理結果回傳至 Redis 佇列，更新工單系統。
   - 工單系統通過 WebSocket 服務將回覆實時推送給 Web 客戶端。
 
