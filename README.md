@@ -26,31 +26,36 @@
 // laravel-backend/app/Http/Controllers/WebhookController.php
 public function handleIncoming(Request $request)
 {
+    // 記錄接收到的 webhook 數據，便於除錯
     Log::info('Received incoming webhook:', $request->all());
     
+    // 驗證輸入數據，確保 message 等欄位有效
     $request->validate([
-        'message' => 'required|string|max:5000',
-        'customer_identifier' => 'required|string|max:255',
-        'source_channel' => 'required|string|in:web_chat,email,line_webhook,other',
-        'subject' => 'nullable|string|max:255',
+        'message' => 'required|string|max:5000', // 訊息長度限制在 5000 字符
+        'customer_identifier' => 'required|string|max:255', // 客戶識別碼長度限制
+        'source_channel' => 'required|string|in:web_chat,email,line_webhook,other', // 限制來源渠道
+        'subject' => 'nullable|string|max:255', // 主題可選，長度限制
     ]);
 
+    // 查找或創建客戶，若不存在則初始化基本信息
     $customer = User::firstOrCreate(
         ['email' => $request->input('customer_identifier')],
         ['name' => 'External Customer', 'password' => Str::random(10), 'role' => 'customer']
     );
 
+    // 查找現有工單或創建新工單，根據狀態和更新時間排序
     $ticket = Ticket::where('customer_id', $customer->id)
                     ->whereIn('status', ['pending', 'in_progress', 'replied'])
                     ->orderBy('updated_at', 'desc')
                     ->first() ?? Ticket::create([
                         'customer_id' => $customer->id,
                         'subject' => $request->input('subject', 'New Inquiry from ' . $request->input('source_channel')),
-                        'status' => 'pending',
-                        'priority' => 'normal',
+                        'status' => 'pending', // 默認狀態為待處理
+                        'priority' => 'normal', // 默認優先級為正常
                         'source_channel' => $request->input('source_channel'),
                     ]);
 
+    // 將工單處理任務推送到 Redis 佇列，實現非同步處理
     ProcessIncomingWebhook::dispatch(
         $ticket->id,
         $request->input('message'),
@@ -58,6 +63,7 @@ public function handleIncoming(Request $request)
         $request->input('source_channel')
     );
 
+    // 返回 202 狀態，表示訊息已接收並排隊處理
     return response()->json(['status' => 'Message received and queued for processing.'], 202);
 }
 ```
@@ -69,25 +75,30 @@ public function handleIncoming(Request $request)
 # fastapi-ai-service/app/main.py
 @app.post("/ai/process_incoming_message", response_model=TicketAnalysisResponse)
 async def process_incoming_message(request: TicketAnalysisRequest):
+    # 記錄處理的訊息，用於日誌追蹤
     logger.info(f"Processing incoming message for ticket {request.ticket_id}: '{request.message}'")
     
     sentiment, sentiment_confidence = "neutral", 0.0
+    # 檢查情感分析模型是否加載，若加載則執行分析
     if sentiment_service.is_model_loaded():
         sentiment, sentiment_confidence = sentiment_service.analyze_sentiment(request.message)
 
     intent, intent_confidence = "unknown", 0.0
+    # 檢查聊天機器人模型是否加載，若加載則預測意圖
     if chatbot_service.is_model_loaded():
         intent, intent_confidence = chatbot_service.predict_intent(request.message)
 
     kb_answer = None
+    # 檢查知識庫是否加載，若加載則搜索相關答案
     if knowledge_base_service.is_kb_loaded():
         kb_answer = knowledge_base_service.search_knowledge_base(request.message, intent)
 
     ai_reply = kb_answer or (chatbot_service.get_reply(intent, request.message) if intent != "unknown" else None)
+    # 若有知識庫答案則優先使用，否則根據意圖生成回覆
     
     suggested_agent_id, suggested_priority = dispatch_service.suggest_dispatch(
         intent, sentiment, request.existing_ticket_status
-    )
+    ) # 根據意圖、情感和工單狀態建議分配代理和優先級
 
     return TicketAnalysisResponse(
         ticket_id=request.ticket_id,
@@ -99,7 +110,7 @@ async def process_incoming_message(request: TicketAnalysisRequest):
         suggested_agent_id=suggested_agent_id,
         suggested_priority=suggested_priority,
         knowledge_base_answer=kb_answer
-    )
+    ) # 返回完整的分析結果
 ```
 
 ### 3. WebSocket 實時通信（Laravel）
@@ -112,27 +123,31 @@ class MessageReplied implements ShouldBroadcast
     public $ticket;
     public $reply;
 
+    // 構造函數，初始化工單和回覆數據
     public function __construct(Ticket $ticket, Reply $reply)
     {
         $this->ticket = $ticket;
         $this->reply = $reply;
     }
 
+    // 定義廣播頻道，私有頻道基於工單 ID
     public function broadcastOn(): array
     {
         return [new PrivateChannel('tickets.' . $this->ticket->id)];
     }
 
+    // 定義廣播事件名稱
     public function broadcastAs(): string
     {
         return 'message.replied';
     }
 
+    // 定義要廣播的數據，包含工單 ID 和回覆詳情
     public function broadcastWith(): array
     {
         return [
             'ticket_id' => $this->ticket->id,
-            'reply' => $this->reply->load('user'),
+            'reply' => $this->reply->load('user'), // 預加載用戶信息
         ];
     }
 }
