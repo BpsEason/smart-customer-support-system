@@ -145,52 +145,52 @@ class MessageReplied implements ShouldBroadcast
 ```mermaid
 graph TD
     subgraph 客戶介面
-        User[用戶] --> WebApp[前端應用 Web-App]
-        WebApp --> WebhookReceiver[Laravel Webhook]
+        User[用戶] --> Web[Web 客戶端]
+        Web --> Webhook[Webhook 接收器]
     end
 
     subgraph Laravel 後端
-        WebhookReceiver --> RedisQueue[Redis 佇列]
-        RedisQueue --> TicketSystem[工單系統]
-        TicketSystem --> MySQL[MySQL 資料庫]
-        TicketSystem --> Dashboard[儀表板]
-        TicketSystem --> WebApp[WebSocket-Email]
-        AdminInterface[管理員介面] --> TicketSystem
+        Webhook --> Queue[Redis 佇列]
+        Queue --> Ticket[工單系統]
+        Ticket --> DB[MySQL 資料庫]
+        Ticket --> Dashboard[儀表板]
+        Ticket --> WebSocket[WebSocket 服務]
+        Admin[管理員介面] --> Ticket
     end
 
     subgraph FastAPI AI 服務
-        RedisQueue --> FastAPI[FastAPI API]
-        FastAPI --> Chatbot[聊天機器人]
-        FastAPI --> SentimentAnalysis[情感分析]
-        FastAPI --> IntelligentDispatch[智能分配]
-        FastAPI --> KnowledgeBase[知識庫]
-        Chatbot --> NLPModel[NLP 模型]
-        SentimentAnalysis --> AIModel[AI 模型]
-        KnowledgeBase --> KBData[知識庫數據]
+        Queue --> API[FastAPI API]
+        API --> Chat[聊天機器人]
+        API --> Sentiment[情感分析]
+        API --> Dispatch[智能分配]
+        API --> KB[知識庫]
+        Chat --> NLP[NLP 模型]
+        Sentiment --> AI[AI 模型]
+        KB --> Data[知識庫數據]
     end
 
-    FastAPI --> RedisQueue[處理結果]
-    RedisQueue --> TicketSystem[更新工單]
-    TicketSystem --> WebApp[客戶回覆]
+    API --> Queue[處理結果]
+    Queue --> Ticket[更新工單]
+    WebSocket --> Web[客戶回覆]
 
     style User fill:#f9f,stroke:#333
-    style WebApp fill:#bbf,stroke:#333
-    style RedisQueue fill:#ffb,stroke:#333
-    style FastAPI fill:#e6e,stroke:#333
+    style Web fill:#bbf,stroke:#333
+    style Queue fill:#ffb,stroke:#333
+    style API fill:#e6e,stroke:#333
 ```
 
 ### 架構說明
 
-- **客戶介面**：支持 Web、App 和 Email 渠道，訊息通過 Webhook 傳至 Laravel 後端。
+- **客戶介面**：用戶通過 Web 客戶端發送請求，Webhook 接收器處理多渠道輸入。
 - **Laravel 後端**：
-  - **WebhookReceiver**：接收並驗證客戶訊息，推送到 Redis 佇列。
-  - **TicketSystem**：管理工單生命週期，與 MySQL 同步數據。
-  - **WebSocket**：通過 Laravel Reverb 實現實時回覆。
-  - **AdminInterface**：提供 API 驅動的管理員操作介面。
+  - **Webhook 接收器**：接收並驗證客戶訊息，推送到 Redis 佇列。
+  - **工單系統**：管理工單生命週期，與 MySQL 同步數據。
+  - **WebSocket 服務**：通過 Laravel Reverb 實現實時回覆推送。
+  - **管理員介面**：提供 API 驅動的操作介面。
 - **FastAPI AI 服務**：
   - 提供意圖識別、情感分析、工單分配和知識庫推薦。
   - 使用持久化 Volume 存儲模型和數據。
-- **數據流**：訊息經 Redis 佇列分發至 AI 服務，結果回傳至工單系統並最終推送給客戶。
+- **數據流**：訊息經 Redis 佇列分發至 AI 服務，結果回傳至工單系統，並通過 WebSocket 推送給客戶。
 
 ## 技術挑戰與解決方案
 
