@@ -213,7 +213,7 @@ graph TD
 
 1. 克隆專案並進入目錄：
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/BpsEason/smart-customer-support-system.git
    cd smart-customer-support-system
    ```
 
