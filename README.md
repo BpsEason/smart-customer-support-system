@@ -145,7 +145,7 @@ class MessageReplied implements ShouldBroadcast
 ```mermaid
 graph TD
     subgraph 客戶介面
-        User[用戶] --> WebApp[前端應用 (Web/App)]
+        User[用戶] --> WebApp[前端應用 Web-App]
         WebApp --> WebhookReceiver[Laravel Webhook]
     end
 
@@ -154,7 +154,7 @@ graph TD
         RedisQueue --> TicketSystem[工單系統]
         TicketSystem --> MySQL[MySQL 資料庫]
         TicketSystem --> Dashboard[儀表板]
-        TicketSystem --> WebApp[WebSocket/Email]
+        TicketSystem --> WebApp[WebSocket-Email]
         AdminInterface[管理員介面] --> TicketSystem
     end
 
