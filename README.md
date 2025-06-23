@@ -144,53 +144,67 @@ class MessageReplied implements ShouldBroadcast
 
 ```mermaid
 graph TD
+    A[用戶] -->|發送請求| B(Web 客戶端)
+    B -->|Webhook 輸入| C[Webhook 接收器]
+    C -->|推送到佇列| D[Redis 佇列]
+    D -->|分發至 AI| E[FastAPI AI 服務]
+    E -->|處理結果| D
+    D -->|更新工單| F[工單系統]
+    F -->|儲存數據| G[MySQL 資料庫]
+    F -->|推送回覆| H[WebSocket 服務]
+    H -->|實時更新| B
+    I[管理員介面] -->|API 操作| F
+    J[儀表板] -->|監控數據| F
+
     subgraph 客戶介面
-        User[用戶] --> Web[Web 客戶端]
-        Web --> Webhook[Webhook 接收器]
+        A
+        B
     end
 
     subgraph Laravel 後端
-        Webhook --> Queue[Redis 佇列]
-        Queue --> Ticket[工單系統]
-        Ticket --> DB[MySQL 資料庫]
-        Ticket --> Dashboard[儀表板]
-        Ticket --> WebSocket[WebSocket 服務]
-        Admin[管理員介面] --> Ticket
+        C
+        D
+        F
+        G
+        H
+        I
+        J
     end
 
-    subgraph FastAPI AI 服務
-        Queue --> API[FastAPI API]
-        API --> Chat[聊天機器人]
-        API --> Sentiment[情感分析]
-        API --> Dispatch[智能分配]
-        API --> KB[知識庫]
-        Chat --> NLP[NLP 模型]
-        Sentiment --> AI[AI 模型]
-        KB --> Data[知識庫數據]
+    subgraph AI 服務
+        E
     end
 
-    API --> Queue[處理結果]
-    Queue --> Ticket[更新工單]
-    WebSocket --> Web[客戶回覆]
-
-    style User fill:#f9f,stroke:#333
-    style Web fill:#bbf,stroke:#333
-    style Queue fill:#ffb,stroke:#333
-    style API fill:#e6e,stroke:#333
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+    style C fill:#dfd,stroke:#333
+    style D fill:#ffb,stroke:#333
+    style E fill:#e6e,stroke:#333
+    style F fill:#ddf,stroke:#333
+    style G fill:#dfd,stroke:#333
+    style H fill:#dfd,stroke:#333
+    style I fill:#dfd,stroke:#333
+    style J fill:#dfd,stroke:#333
 ```
 
 ### 架構說明
 
-- **客戶介面**：用戶通過 Web 客戶端發送請求，Webhook 接收器處理多渠道輸入。
+- **客戶介面**：
+  - 用戶通過 Web 客戶端發送請求，Webhook 接收器處理多渠道（Web、App、Email）輸入。
 - **Laravel 後端**：
   - **Webhook 接收器**：接收並驗證客戶訊息，推送到 Redis 佇列。
-  - **工單系統**：管理工單生命週期，與 MySQL 同步數據。
+  - **工單系統**：管理工單生命週期，與 MySQL 資料庫同步數據。
   - **WebSocket 服務**：通過 Laravel Reverb 實現實時回覆推送。
   - **管理員介面**：提供 API 驅動的操作介面。
+  - **儀表板**：顯示監控數據，支援系統管理。
 - **FastAPI AI 服務**：
   - 提供意圖識別、情感分析、工單分配和知識庫推薦。
   - 使用持久化 Volume 存儲模型和數據。
-- **數據流**：訊息經 Redis 佇列分發至 AI 服務，結果回傳至工單系統，並通過 WebSocket 推送給客戶。
+- **數據流**：
+  - 訊息從 Web 客戶端經 Webhook 接收器進入 Redis 佇列。
+  - Redis 佇列將訊息分發至 FastAPI AI 服務進行處理。
+  - 處理結果回傳至 Redis 佇列，更新工單系統。
+  - 工單系統通過 WebSocket 服務將回覆實時推送給 Web 客戶端。
 
 ## 技術挑戰與解決方案
 
